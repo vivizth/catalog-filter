@@ -1,8 +1,9 @@
 import { HttpClient } from '@angular/common/http';
 import { Component, OnInit } from '@angular/core';
 import { FormBuilder, FormControl, FormGroup } from '@angular/forms';
-import { combineLatest, Observable } from 'rxjs';
-import { filter, map, startWith, tap, withLatestFrom } from 'rxjs/operators';
+import { combineLatest, Observable, of } from 'rxjs';
+import { catchError, filter, map, startWith, tap, withLatestFrom } from 'rxjs/operators';
+import {ListService} from './list.service';
 @Component({
   selector: 'app-root',
   templateUrl: './app.component.html',
@@ -10,27 +11,31 @@ import { filter, map, startWith, tap, withLatestFrom } from 'rxjs/operators';
 })
 export class AppComponent {
   title = 'category';
-  api: 'https://api.publicapis.org/categories';
-  allList$: Observable<string[]>;
-  filter$: Observable<string[]>;
+  filterCatalog$: Observable<string[]>;
   form: FormGroup;
 
-  constructor(private http: HttpClient, private fb: FormBuilder){
+  constructor(private fb: FormBuilder, private listService: ListService){
     this.form = fb.group({
       query: ['']
-    })
-    this.allList$ = this.http.get<string[]>('https://api.publicapis.org/categories');
+    });
     const query = this.form.get('query').valueChanges.pipe(startWith(''));
-    this.filter$ = combineLatest([this.allList$, query]).pipe(
+
+    const allCatalog$ = this.listService.getCatalog().pipe(
+      catchError(e => of([]))
+    );
+    this.filterCatalog$ = combineLatest([allCatalog$, query]).pipe(
       map(this.doFilter)
     )
   }
 
-  doFilter = ([list, query]) => {
+  doFilter = ([list, query]: [string[], string]) => {
+    if(!query) { return list; }
+
     query = query.toLowerCase();
     return list.filter(l => { 
       l = l.toLowerCase();
-      return l.indexOf(query) > -1;
+      const isMatch = l.indexOf(query) > -1;
+      return isMatch;
     })
   }
   

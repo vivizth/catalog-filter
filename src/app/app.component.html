@@ -1,6 +1,6 @@
 <form [formGroup]="form">
   <input formControlName="query"/>
 </form>
-<div *ngFor="let r of filter$ | async">
+<div *ngFor="let r of filterCatalog$ | async">
   {{r}}
 </div>
